@@ -4,5 +4,6 @@ import com.vishal.todo.dto.UserDtoRequest;
 import com.vishal.todo.entity.User;
 
 public interface UserService  {
-    User createUser(UserDtoRequest request);
+    void createUser(UserDtoRequest request);
+    boolean verifyEmailOtp(String email, String otp);
 }

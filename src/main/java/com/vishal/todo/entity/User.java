@@ -2,15 +2,22 @@ package com.vishal.todo.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 @Entity
 @Data
 @NoArgsConstructor
+@ToString(exclude = "roles") // this is use to not add roles in toString method so can  make fast
+@EqualsAndHashCode(exclude = "roles")
 @Table(name = "users",
         indexes = {
                 @Index(name = "idx_users_email", columnList = "email"),
@@ -38,6 +45,14 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     private boolean deleted = false;
+    private boolean is_email_verified = false;
 
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
 
 }

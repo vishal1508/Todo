@@ -1,13 +1,46 @@
+jwt:
+  secret:
+  access-token-expiration-ms: 86400000
+  refresh-token-expiration-ms: 86400000
 server:
-  port:
+  port: 8084
+redis:
+  url:
+  port: 16205
+  username:
+  password:
+  timeout: 6000ms
 spring:
+  mail:
+    host:
+    port:
+    username:
+    password:
+    properties:
+      mail:
+        transport:
+          protocol: smtp
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
   datasource:
     url:
     username:
     password:
     hikari:
       maximum-pool-size: 10
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+
