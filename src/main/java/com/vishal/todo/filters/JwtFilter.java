@@ -2,6 +2,10 @@ package com.vishal.todo.filters;
 
 import com.vishal.todo.services.impl.UserDetailServiceImpl;
 import com.vishal.todo.security.JwtUtil;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +19,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+
 @Configuration
 public class JwtFilter extends OncePerRequestFilter {
     @Autowired
@@ -29,9 +34,26 @@ public class JwtFilter extends OncePerRequestFilter {
         String email = null;
 
         // Extract JWT from header
+//        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+//            token = authHeader.substring(7);
+//            email = jwtUtil.extractUsername(token);
+//        }
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
-            email = jwtUtil.extractUsername(token);
+
+            try {
+                email = jwtUtil.extractUsername(token);
+            } catch (ExpiredJwtException e) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\":\"Access token expired\"}");
+                return;
+            } catch (SignatureException | MalformedJwtException | UnsupportedJwtException | IllegalArgumentException e) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\":\"Invalid access token\"}");
+                return;
+            }
         }
         if (email != null &&
                 SecurityContextHolder.getContext().getAuthentication() == null

@@ -3,6 +3,7 @@ package com.vishal.todo.services.impl;
 import com.vishal.todo.entity.User;
 import com.vishal.todo.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -24,12 +25,24 @@ public class UserDetailServiceImpl implements UserDetailsService {
                 .map(role -> role.getName().name())  // RoleEnum -> "ROLE_ADMIN"
                 .toArray(String[]::new);
 
-        UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
-                .username(user.getEmail())
+//        UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
+//                .username(user.getEmail())
+//                .password(user.getPasswordHash())
+//                .roles(roles)
+//                .build();
+//        return userDetails;
+        return new CustomUserDetails.Builder()
+                .id(user.getId())
+                .email(user.getEmail())
                 .password(user.getPasswordHash())
-                .roles(roles)
-                .build();
-        return userDetails;
+                .authorities(
+                        user.getRoles()
+                                .stream()
+                                .map(role ->
+                                        new SimpleGrantedAuthority(role.getName().name()))
+                                .toList()
+                )
+                .build(); // ✅ works
 
 
     }

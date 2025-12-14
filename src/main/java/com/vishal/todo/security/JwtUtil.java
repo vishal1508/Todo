@@ -1,12 +1,14 @@
 package com.vishal.todo.security;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 
 import java.security.Key;
+import java.util.Collection;
 import java.util.Date;
 
 
@@ -23,24 +25,29 @@ public class JwtUtil {
         byte[] keyBytes = java.util.Base64.getDecoder().decode(SECRET_KEY);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
     // =========================
     // 🔹 Generate JWT Token
     // =========================
-    public String generateToken(String email) {
+    public String generateToken(String email, String[] roles) {
+        // Convert authorities to a comma-separated string
 
         return Jwts.builder()
-                .setSubject(email)                  // username / email
+                .setSubject(email)
+                .claim("roles", roles)
                 .setIssuedAt(new Date())               // token issue time
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
+
     // =========================
     // 🔹 Extract Username
     // =========================
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
     }
+
     // =========================
     // 🔹 Validate Token
     // =========================
@@ -49,12 +56,14 @@ public class JwtUtil {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
+
     // =========================
     // 🔹 Check if Expired
     // =========================
     private boolean isTokenExpired(String token) {
         return extractAllClaims(token).getExpiration().before(new Date());
     }
+
     // =========================
     // 🔹 Extract Claims
     // =========================
@@ -65,4 +74,5 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
     }
+
 }

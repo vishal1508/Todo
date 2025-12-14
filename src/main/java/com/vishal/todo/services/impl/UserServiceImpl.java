@@ -1,15 +1,19 @@
 package com.vishal.todo.services.impl;
 
 import com.vishal.todo.dto.UserDtoRequest;
+import com.vishal.todo.dto.UserResponse;
 import com.vishal.todo.entity.Role;
 import com.vishal.todo.entity.User;
 import com.vishal.todo.enums.RoleEnum;
+import com.vishal.todo.exception.ResourceNotFoundException;
+import com.vishal.todo.exception.UserAlreadyExistsException;
 import com.vishal.todo.repositories.RoleRepository;
 import com.vishal.todo.repositories.UserRepository;
 import com.vishal.todo.services.UserOtpManager;
 import com.vishal.todo.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -28,10 +32,11 @@ public class UserServiceImpl implements UserService {
     private RoleRepository roleRepository;
     @Autowired
     private UserOtpManager userOtpManager;
+
     public void createUser(UserDtoRequest request) {
         // Check duplicate email
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered!");
+            throw new UserAlreadyExistsException("Email already registered");
         }
 
         // Create new user
@@ -39,24 +44,27 @@ public class UserServiceImpl implements UserService {
         user.setName(request.getName());
         user.setEmail(request.getEmail());
 
-        if (request.getEmail() == null || !request.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+        if (request.getEmail() == null || !request.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
             throw new RuntimeException("Invalid email format");
         }
 
         Set<Role> roles = new HashSet<>();
-        for (RoleEnum roleData : request.getRoles()) {
-            Role role = roleRepository.findByName(roleData)
-                    .orElseThrow(() -> new RuntimeException("Role not found: " + roleData));
-            roles.add(role);
-        }
+        RoleEnum userRole = RoleEnum.valueOf("USER");
+
+        Role role = roleRepository.findByName(userRole)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + userRole));
+        roles.add(role);
+
+
 
         user.setRoles(roles);
         // Hash password
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-         userRepository.save(user);
+        userRepository.save(user);
 
-         userOtpManager.sendOtpToUser(request.getEmail());
+        userOtpManager.sendOtpToUser(request.getEmail());
     }
+
     /**
      * Verify OTP and activate user
      */
@@ -75,5 +83,33 @@ public class UserServiceImpl implements UserService {
         user.set_email_verified(true);
         userRepository.save(user);
         return true;
+    }
+
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+    @Override
+    public UserResponse getCurrentUser() {
+
+        String email = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
+
+        return new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail()
+        );
+    }
+    @Override
+    public long getTotalUsers() {
+        return userRepository.countByDeletedFalse();
+        // OR: return userRepository.count();
     }
 }

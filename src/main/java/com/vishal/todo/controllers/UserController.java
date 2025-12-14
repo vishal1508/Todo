@@ -1,6 +1,8 @@
 package com.vishal.todo.controllers;
 
+import com.vishal.todo.dto.ApiResponse;
 import com.vishal.todo.dto.UserDtoRequest;
+import com.vishal.todo.dto.UserResponse;
 import com.vishal.todo.entity.User;
 import com.vishal.todo.repositories.UserRepository;
 import com.vishal.todo.services.UserService;
@@ -12,7 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/user")
 public class UserController {
 
     @Autowired
@@ -21,22 +23,21 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
-    // Create User
-    @PutMapping
-    public ResponseEntity<?> createUser(@RequestBody UserDtoRequest userDtoRequest) {
-        try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication == null) {
-                System.out.println("Authentication failed");
-            }
-            String email = authentication.getName();
-            User user = userRepository.findByEmail(userDtoRequest.getEmail()).orElseThrow(() -> new RuntimeException("User not found"));
-            userService.createUser(userDtoRequest);
-            return new ResponseEntity<>(SecurityContextHolder.getContext().getAuthentication().getName(), HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse> getMyProfile() {
 
+        UserResponse user = userService.getCurrentUser();
+
+        return ResponseEntity.ok(
+                new ApiResponse(true, "User profile fetched", user)
+        );
     }
+    @GetMapping("/count")
+    public ResponseEntity<ApiResponse> getTotalUsers() {
+        long count = userService.getTotalUsers();
 
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Total users fetched successfully", count)
+        );
+    }
 }

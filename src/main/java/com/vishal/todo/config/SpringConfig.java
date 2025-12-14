@@ -28,7 +28,7 @@ public class SpringConfig {
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/**").authenticated().anyRequest().permitAll()
+                        .requestMatchers("/api/v1/user/**","/api/v1/todo/**").authenticated().anyRequest().permitAll()
                 ).addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
